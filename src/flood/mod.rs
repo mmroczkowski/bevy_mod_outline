@@ -1,3 +1,5 @@
+use bevy::anti_alias::fxaa::fxaa;
+use bevy::anti_alias::smaa::smaa;
 use bevy::asset::embedded_asset;
 use bevy::core_pipeline::{Core3d, Core3dSystems};
 use bevy::pbr::{MeshInputUniform, MeshUniform};
@@ -198,6 +200,8 @@ impl Plugin for FloodPlugin {
             Core3d,
             flood_render_pass
                 .after(outline_render_pass)
+                .before(fxaa)
+                .before(smaa)
                 .in_set(Core3dSystems::PostProcess),
         );
     }
