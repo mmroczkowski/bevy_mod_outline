@@ -179,7 +179,7 @@ pub(crate) fn specialise_outlines(
             };
 
             warm_up_keys.clear();
-            warm_up_keys.push(outline.pipeline_key);
+            warm_up_keys.push(outline.pipeline_key.with_render_mesh(mesh));
 
             if outline.warm_up.transparency {
                 let range = 0..warm_up_keys.len();

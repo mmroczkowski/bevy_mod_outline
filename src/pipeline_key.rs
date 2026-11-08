@@ -2,9 +2,11 @@ use std::ops::BitOr;
 
 use bevy::{
     math::Vec3,
+    mesh::BaseMeshPipelineKey,
     pbr::MeshPipelineKey,
     prelude::*,
     render::{
+        mesh::RenderMesh,
         render_resource::{PrimitiveTopology, TextureFormat},
         view::{texture_format_from_code, texture_format_to_code, Msaa},
     },
@@ -154,13 +156,13 @@ impl EntityPipelineKey {
         EntityPipelineKey(RawPipelineKey::new())
     }
 
-    pub(crate) fn with_primitive_topology(mut self, primitive_topology: PrimitiveTopology) -> Self {
-        self.0.set_primitive_topology_int(primitive_topology as u32);
-        self
-    }
-
-    pub(crate) fn with_morph_targets(mut self, morph_targets: bool) -> Self {
-        self.0.set_morph_targets(morph_targets);
+    /// Takes the primitive topology and morph targets from the mesh as prepared for rendering,
+    /// as a mesh kept in the render world alone has no data left in the main world.
+    pub(crate) fn with_render_mesh(mut self, mesh: &RenderMesh) -> Self {
+        self.0
+            .set_primitive_topology_int(mesh.primitive_topology() as u32);
+        self.0
+            .set_morph_targets(mesh.key_bits.contains(BaseMeshPipelineKey::MORPH_TARGETS));
         self
     }
 
@@ -294,12 +296,10 @@ pub(crate) fn compute_outline_key(
             continue;
         };
 
-        let Some(mesh) = meshes.get(mesh) else {
+        if !meshes.contains(mesh) {
             continue;
-        };
+        }
         key.0 = EntityPipelineKey::new()
-            .with_primitive_topology(mesh.primitive_topology())
-            .with_morph_targets(mesh.morph_targets().is_some())
             .with_transparent(!outline.volume.value.colour.is_fully_opaque())
             .with_depth_mode(outline.mode.value.depth_mode)
             .with_vertex_offset_zero(outline.volume.value.offset == 0.0)
